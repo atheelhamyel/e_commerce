@@ -1,7 +1,7 @@
 
 import 'package:e_commerce/models/catogry_model.dart';
 
-class ProductModel{
+class ProductModel {
   final String id ;
   final String imgUrl ;
   final String name ;

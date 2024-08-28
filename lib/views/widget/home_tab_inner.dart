@@ -1,10 +1,11 @@
-import 'package:e_commerce/models/prodect_model.dart';
-import 'package:e_commerce/uitls/app_colors.dart';
+import 'package:e_commerce/uitls/app_routes.dart';
+import 'package:e_commerce/view_model/home_tab_cubit/home_tab_cubit.dart';
 import 'package:e_commerce/views/widget/carousel_home.dart';
+import 'package:e_commerce/views/widget/product_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomeTabInner extends StatefulWidget {
-
   const HomeTabInner({super.key});
 
   @override
@@ -12,109 +13,85 @@ class HomeTabInner extends StatefulWidget {
 }
 
 class _HomeTabInnerState extends State<HomeTabInner> {
-  final List<ProductModel> categories = dummyProducts;
-
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          const CarouselHome(),
-          const SizedBox(height: 28),
-          GridView.builder(
-            itemCount: categories.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 16,
-            ),
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (_, index) {
-              final product = categories[index];
-              return InkWell(
-                onTap: () {
-                  // Add your onTap functionality here
-                },
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AppColor.white,
-                    borderRadius: BorderRadius.circular(16),
+    final homeTabCubit = BlocProvider.of<HomeTabCubit>(context);
+
+    return BlocBuilder<HomeTabCubit, HomeState>(
+      bloc: homeTabCubit,
+      buildWhen: (previous, current) =>
+          current is HomeLoaded || current is HomeLoading,
+      builder: (context, state) {
+        if (state is HomeLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        } else if (state is HomeLoaded) {
+          final announcements = state.announcementImages;
+          final products = state.product;
+
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.28,
+                    child: CarouselHome(annoucment: announcements),
                   ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.network(
-                              product.imgUrl,
-                              height: 70,
-                              width: 70,
+                  const SizedBox(height: 32.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'New Arrivals',
+                        style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              product.name,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '\$${product.price}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                            Positioned(
-                           top: 10,
-                           right: 10,
-                            child: DecoratedBox(
-                                  decoration: const BoxDecoration(
-                                    color: AppColor.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            product.isFavorite = !product.isFavorite;
-                          });
-                        },
-                        child:  Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Icon(
-                            product.isFavorite?
-                            Icons.favorite
-                            :Icons.favorite_border,
-                          size: 15,
-                           color:Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      )),),
-                      Positioned(
-                        top: 50,
-                       right :0,
-                        child: IconButton(onPressed: () {
-                          setState(() {
-                            product.orders = true;
-                          });
-                        }
-                        , icon: const Icon(Icons.add_circle_outline_outlined)),
-                      )
-                        ]
                       ),
-                    ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('See All'),
+                      ),
+                    ],
                   ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+                  const SizedBox(height: 16.0),
+                  // No need for SizedBox or Expanded here
+                  GridView.builder(
+                    itemCount: products.length,
+                    shrinkWrap: true, // Allows GridView to shrink inside SingleChildScrollView
+                    physics: const NeverScrollableScrollPhysics(), // Prevents the GridView from scrolling independently
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                    ),
+                    itemBuilder: (context, index) {
+                      return InkWell(
+                        onTap: () {
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.productDetails,
+                            arguments: products[index].id,
+                          );
+                        },
+                        child: ProductItem(
+                          productItem: products[index],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                ],
+              ),
+            ),
+          );
+        } else {
+          return const Center(
+            child: Text('An error occurred, please try again later.'),
+          );
+        }
+      },
     );
   }
 }
