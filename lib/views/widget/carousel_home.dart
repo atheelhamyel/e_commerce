@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
 class CarouselHome extends StatefulWidget {
-  const CarouselHome({super.key});
+  final List<String> annoucment ;
+  const CarouselHome({super.key,required this.annoucment});
 
   @override
   State<CarouselHome> createState() => _CarouselHomeState();
@@ -11,16 +12,9 @@ class CarouselHome extends StatefulWidget {
 class _CarouselHomeState extends State<CarouselHome> {
   final CarouselController _controller = CarouselController();
   int _current = 0;
-  
-  final List<String> imgList = [
-    'https://img.freepik.com/free-photo/close-up-woman-holding-shopping-bags_23-2149220711.jpg?size=626&ext=jpg&ga=GA1.1.1141335507.1719014400&semt=ais_user',
-    'https://img.freepik.com/free-photo/sale-retail-with-with-special-offer_23-2149656613.jpg?size=626&ext=jpg&ga=GA1.1.471830546.1721057613&semt=ais_user',
-    'https://img.freepik.com/premium-vector/sale-girl-is-shouting-into-mouthpiece-about-start-shopping-sales_491047-267.jpg?w=1060',
-    'https://img.freepik.com/free-photo/3d-rendering-3d-discount-numbers_52683-92343.jpg?ga=GA1.1.471830546.1721057613&semt=ais_user'
-    'https://img.freepik.com/premium-photo/sale-products-with-discount_23-2150296321.jpg?ga=GA1.1.471830546.1721057613&semt=ais_user'
-  ];
+ 
 
-  List<Widget> get imageSliders => imgList
+  List<Widget> get imageSliders => widget.annoucment
       .map((item) => Center(
         child: Image.network(item, fit: BoxFit.cover, width: 1000),
       ))
@@ -47,7 +41,7 @@ class _CarouselHomeState extends State<CarouselHome> {
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: imgList.asMap().entries.map((entry) {
+          children: widget.annoucment.asMap().entries.map((entry) {
             return GestureDetector(
               onTap: () => _controller.animateToPage(entry.key),
               child: Container(

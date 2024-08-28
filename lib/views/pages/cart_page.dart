@@ -1,176 +1,111 @@
-import 'package:e_commerce/models/prodect_model.dart';
 import 'package:e_commerce/uitls/app_colors.dart';
+import 'package:e_commerce/view_model/cart_cubit/cart_cubit_cubit.dart';
+import 'package:e_commerce/view_model/cart_cubit/cart_cubit_state.dart';
+import 'package:e_commerce/views/widget/label_with_value_row.dart';
+import 'package:e_commerce/views/widget/main_button.dart';
+import 'package:e_commerce/views/widget/order_cart_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-// ignore: must_be_immutable
-class CartPage extends StatefulWidget {
-  final List<ProductModel> ordersProducts;
-
-  CartPage({super.key})
-      : ordersProducts = dummyProducts.where((p) => p.orders).toList();
-
-  int drivary = 5;  
-
-  @override
-  State<CartPage> createState() => _CartState();
-}
-
-class _CartState extends State<CartPage> {
-  double get subtotal {
-    return widget.ordersProducts.fold(0, (sum, product) => sum + product.price.toDouble());
-  }
+class CartPage extends StatelessWidget {
+  const CartPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      
-      body: Column(
-        children: [
-          SizedBox(
-            height: 50,
-            width: 250,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: AppColor.white,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                child: Row(
-                 children: [
-                   const Icon(Icons.pedal_bike_outlined),
-                   const SizedBox(width: 5,),
-                    Column(
-                   children: [
-                     const Text('Co_delivery'),
-                      Text('15 min',style: Theme.of(context).textTheme.bodyMedium!.
-                        copyWith(color: Theme.of(context).primaryColor),)
-                       ],
-                     ),
-                     const SizedBox(width: 20,),
-                     const Icon(Icons.toggle_on,)
-                     ],
-                     ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 50,),
-          Expanded(
+    final cartCubit = BlocProvider.of<CartCubit>(context);
+
+    return BlocConsumer<CartCubit, CartState>(
+      bloc: cartCubit,
+      listenWhen: (previous, current) => current is CartError,
+      listener: (context, state) {
+        if (state is CartError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+        }
+      },
+      buildWhen: (previous, current) =>
+          current is CartLoaded || current is CartError || current is CartLoading,
+      builder: (context, state) {
+        if (state is CartLoading) {
+          return const Center(
+            child: CircularProgressIndicator.adaptive(),
+          );
+        } else if (state is CartLoaded) {
+          final cartItems = state.cartOrders;
+          final subtotal = state.subtotal;
+          final shipping = state.shipping;
+          final totalPrice = state.totalPrice;
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              cartCubit.getCartItems();
+            },
             child: ListView(
-              children: widget.ordersProducts.map((product) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Stack(
-                    children: [
-                      SizedBox(
-                        height: 100,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: AppColor.white,
-                          ),
-                          child: ListTile(
-                            leading: Image.network(product.imgUrl),
-                            horizontalTitleGap:BorderSide.strokeAlignCenter,
-                            title: Text(product.name, style: Theme.of(context).textTheme.labelLarge),
-                            subtitle: Text('\$${product.price}', style: Theme.of(context).textTheme.bodySmall!.copyWith(color: AppColor.grey2)),
-                          ),
-                        ),
-                      ),
-                      const Positioned(
-                        top: 60,
-                        left: 75,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        top: 60,
-                        right: -10,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.delete_rounded, color: AppColor.primary),
-                              onPressed: () {
-                                setState(() {
-                                  widget.ordersProducts.remove(product);
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                ListView.separated(
+                  itemCount: cartItems.length,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  physics: const NeverScrollableScrollPhysics(),
+                  separatorBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Divider(
+                      color: AppColor.grey2,
+                    ),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 50),
-          SizedBox(
-            width: 400,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: AppColor.white
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Text('Subtotal', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColor.grey2)),
-                        Text('\$${subtotal.toString()}'),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Text('delivery', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColor.grey2)),
-                        Text('\$${widget.drivary.toString()}')
-                      ],
-                    ),
-                    const SizedBox(
-                      width: 200,
-                      height: 5,
-                      child: Divider(color: AppColor.primary),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Text('Total', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColor.black)),
-                        Text('\$${(subtotal + widget.drivary).toString()}')
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () {
-                         
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.primary,
-                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 12),
-                        ),
-                        child: Text('Checkout', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColor.white)),
-                      ),
-                    ),
-                  ],
+                  itemBuilder: (context, index) {
+                    return CartOrderItem(cartItem: cartItems[index]);
+                  },
                 ),
-              ),
+                const SizedBox(height: 36),
+                LabelWithValueRow(
+                  label: 'Subtotal',
+                  value: '\$$subtotal',
+                ),
+                const SizedBox(height: 8),
+                LabelWithValueRow(
+                  label: 'Shipping',
+                  value: '\$$shipping',
+                ),
+                const SizedBox(height: 8),
+                Divider(
+                  color: AppColor.grey2,
+                ),
+                const SizedBox(height: 8),
+                LabelWithValueRow(
+                  label: 'Total',
+                  value: '\$$totalPrice',
+                ),
+                const SizedBox(height: 36),
+                MainButton(
+                  label: 'Checkout',
+                  onPressed: () {
+                    // Add checkout logic here
+                  },
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+          );
+        } else if (state is CartError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(state.message),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => cartCubit.getCartItems(),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return const SizedBox();
+        }
+      },
     );
   }
 }
